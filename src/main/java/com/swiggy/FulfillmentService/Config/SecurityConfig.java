@@ -1,6 +1,6 @@
 package com.swiggy.FulfillmentService.Config;
 
-import com.swiggy.FulfillmentService.Repositories.DeliveryExecutiveRespository;
+import com.swiggy.FulfillmentService.Repositories.DeliveryExecutivesRespository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -33,7 +33,7 @@ public class SecurityConfig {
     private AuthenticationProvider authProvider;
 
     @Autowired
-    private DeliveryExecutiveRespository deliveryExecutiveRespository;
+    private DeliveryExecutivesRespository deliveryExecutivesRespository;
 
     @Bean
     public RestTemplate restTemplate() {
@@ -76,7 +76,7 @@ public class SecurityConfig {
 
     @Bean
     public UserDetailsService userDetailsService() {
-        return username -> deliveryExecutiveRespository.findByUsername(username).orElseThrow();
+        return username -> deliveryExecutivesRespository.findByUsername(username).orElseThrow();
     }
 
     @Bean
