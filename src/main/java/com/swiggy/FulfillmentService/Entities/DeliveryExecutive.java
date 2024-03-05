@@ -42,8 +42,9 @@ public class DeliveryExecutive implements UserDetails {
     @Column(nullable = false)
     private Location location;
 
-    @Enumerated(EnumType.STRING)
     @Builder.Default
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private Availability availability = Availability.AVAILABLE;
 
     @Override
