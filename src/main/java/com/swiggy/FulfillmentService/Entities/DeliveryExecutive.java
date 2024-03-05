@@ -21,7 +21,7 @@ import java.util.Collection;
 public class DeliveryExecutive implements UserDetails {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
     @Column(nullable = false)

@@ -4,7 +4,7 @@ import com.swiggy.FulfillmentService.Builders.Builder;
 import com.swiggy.FulfillmentService.DTOs.DeliveryExecutiveRegistrationRequest;
 import com.swiggy.FulfillmentService.DTOs.DeliveryExecutiveRegistrationResponse;
 import com.swiggy.FulfillmentService.Entities.DeliveryExecutive;
-import com.swiggy.FulfillmentService.Repositories.DeliveryExecutivesRespository;
+import com.swiggy.FulfillmentService.Repositories.DeliveryExecutivesRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -13,18 +13,18 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class DeliveryExecutivesService {
 
-    private final DeliveryExecutivesRespository deliveryExecutivesRespository;
+    private final DeliveryExecutivesRepository deliveryExecutivesRepository;
 
     private final PasswordEncoder passwordEncoder;
 
     public DeliveryExecutiveRegistrationResponse register(DeliveryExecutiveRegistrationRequest registrationRequest) {
         try {
-            if (deliveryExecutivesRespository.existsByUsername(registrationRequest.getUsername())) {
+            if (deliveryExecutivesRepository.existsByUsername(registrationRequest.getUsername())) {
                 throw new IllegalArgumentException("User with the given username already exists");
             }
 
             DeliveryExecutive deliveryExecutive = Builder.buildDeliveryExecutive(passwordEncoder, registrationRequest);
-            deliveryExecutivesRespository.save(deliveryExecutive);
+            deliveryExecutivesRepository.save(deliveryExecutive);
             return Builder.buildDeliveryExecutiveRegistrationResponse(registrationRequest);
         } catch (IllegalArgumentException e) {
             throw e;

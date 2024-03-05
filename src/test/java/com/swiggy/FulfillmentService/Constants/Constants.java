@@ -1,6 +1,7 @@
 package com.swiggy.FulfillmentService.Constants;
 
 import com.swiggy.FulfillmentService.DTOs.DeliveryExecutiveRegistrationRequest;
+import com.swiggy.FulfillmentService.DTOs.DeliveryExecutiveRegistrationResponse;
 import com.swiggy.FulfillmentService.DTOs.Location;
 
 public class Constants {
@@ -24,5 +25,14 @@ public class Constants {
             .password(PASSWORD)
             .phone(PHONE)
             .location(location)
+            .build();
+
+    public static final DeliveryExecutiveRegistrationResponse deliveryExecutiveRegistrationResponse = DeliveryExecutiveRegistrationResponse.builder()
+            .firstName(FIRST_NAME)
+            .lastName(LAST_NAME)
+            .username(USERNAME)
+            .phone(PHONE)
+            .location(location)
+            .message(SUCCESSFULLY_REGISTERED)
             .build();
 }
