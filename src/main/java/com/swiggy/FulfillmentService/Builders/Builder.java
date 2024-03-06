@@ -1,13 +1,14 @@
 package com.swiggy.FulfillmentService.Builders;
 
-import com.swiggy.FulfillmentService.DTOs.DeliveryExecutiveRegistrationRequest;
-import com.swiggy.FulfillmentService.DTOs.DeliveryExecutiveRegistrationResponse;
+import com.swiggy.FulfillmentService.DTOs.*;
+import com.swiggy.FulfillmentService.Entities.Delivery;
 import com.swiggy.FulfillmentService.Entities.DeliveryExecutive;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-public class Builder {
+import static com.swiggy.FulfillmentService.Constants.Constants.SUCCESSFULLY_ASSIGNED;
+import static com.swiggy.FulfillmentService.Constants.Constants.SUCCESSFULLY_REGISTERED;
 
-    private static final String SUCCESSFULLY_REGISTERED = "Delivery executive registered successfully";
+public class Builder {
 
     public static DeliveryExecutiveRegistrationResponse buildDeliveryExecutiveRegistrationResponse(DeliveryExecutiveRegistrationRequest registrationRequest) {
         return DeliveryExecutiveRegistrationResponse.builder()
@@ -28,6 +29,28 @@ public class Builder {
                 .password(passwordEncoder.encode(registrationRequest.getPassword()))
                 .phone(registrationRequest.getPhone())
                 .location(registrationRequest.getLocation())
+                .build();
+    }
+
+    public static DeliveryResponse buildDeliveryResponse(DeliveryExecutive deliveryExecutive, DeliveryRequest deliveryRequest) {
+        return DeliveryResponse.builder()
+                .orderId(deliveryRequest.getOrderId())
+                .restaurantLocation(deliveryRequest.getPickupLocation())
+                .customerLocation(deliveryRequest.getDropLocation())
+                .deliveryExecutive(
+                        new DeliveryExecutiveDTO(deliveryExecutive.getFirstName(),
+                        deliveryExecutive.getLastName(),
+                        deliveryExecutive.getPhone()))
+                .message(SUCCESSFULLY_ASSIGNED)
+                .build();
+    }
+
+    public static Delivery buildDelivery(DeliveryExecutive closestAvailableDeliveryExecutive, DeliveryRequest deliveryRequest) {
+        return Delivery.builder()
+                .orderId(deliveryRequest.getOrderId())
+                .restaurantLocation(deliveryRequest.getPickupLocation())
+                .customerLocation(deliveryRequest.getDropLocation())
+                .deliveryExecutive(closestAvailableDeliveryExecutive)
                 .build();
     }
 }

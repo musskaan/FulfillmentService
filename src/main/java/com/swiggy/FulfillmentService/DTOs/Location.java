@@ -6,6 +6,10 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.Pattern;
+
+
 @Data
 @Builder
 @AllArgsConstructor
@@ -15,5 +19,8 @@ public class Location {
     private String street;
     private String city;
     private String state;
+
+    @Pattern(regexp = "\\d{6}", message = "Zip code must be of 6 digits")
+    @NotEmpty(message = "Zip code must not be empty")
     private String zipcode;
 }
