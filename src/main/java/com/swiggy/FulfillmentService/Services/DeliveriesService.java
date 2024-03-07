@@ -12,15 +12,11 @@ import com.swiggy.FulfillmentService.Entities.Delivery;
 import com.swiggy.FulfillmentService.Entities.DeliveryExecutive;
 import com.swiggy.FulfillmentService.Enums.Availability;
 import com.swiggy.FulfillmentService.Enums.DeliveryStatus;
-import com.swiggy.FulfillmentService.Exceptions.NoDeliveryExecutiveNearbyException;
-import com.swiggy.FulfillmentService.Exceptions.NominatimException;
-import com.swiggy.FulfillmentService.Exceptions.OrderAlreadyAssignedException;
-import com.swiggy.FulfillmentService.Exceptions.OrderAlreadyDeliveredException;
+import com.swiggy.FulfillmentService.Exceptions.*;
 import com.swiggy.FulfillmentService.Repositories.DeliveriesRepository;
 import com.swiggy.FulfillmentService.Repositories.DeliveryExecutivesRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -146,10 +142,10 @@ public class DeliveriesService {
         return EARTH_RADIUS * c;
     }
 
-    public DeliveryUpdateResponse updateStatus(String deliveryId) {
+    public DeliveryUpdateResponse updateStatus(String deliveryId, String username) throws AccessDeniedException{
         try {
+            DeliveryExecutive deliveryExecutive = getCurrentDeliveryExecutive(username);
             Delivery delivery = getDeliveryById(deliveryId);
-            DeliveryExecutive deliveryExecutive = getCurrentDeliveryExecutive();
 
             validateRespectiveExecutive(delivery, deliveryExecutive);
             validateNotAlreadyDelivered(delivery.getStatus());
@@ -157,7 +153,7 @@ public class DeliveriesService {
             updateDeliveryAndExecutiveStatus(delivery, deliveryExecutive);
 
             return Builder.buildDeliveryUpdateResponse(delivery);
-        } catch (NoSuchElementException | UsernameNotFoundException | AccessDeniedException | OrderAlreadyDeliveredException e) {
+        } catch (NoSuchElementException | UsernameNotFoundException | UnauthorizedStatusUpdateException | OrderAlreadyDeliveredException e) {
             throw e;
         } catch (Exception e) {
             throw new RuntimeException("Error updating status for delivery: " + deliveryId, e);
@@ -169,15 +165,14 @@ public class DeliveriesService {
         return optionalDelivery.orElseThrow(() -> new NoSuchElementException("No delivery found with id: " + deliveryId));
     }
 
-    private DeliveryExecutive getCurrentDeliveryExecutive() {
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+    private DeliveryExecutive getCurrentDeliveryExecutive(String username) {
         Optional<DeliveryExecutive> optionalDeliveryExecutive = deliveryExecutivesRepository.findByUsername(username);
         return optionalDeliveryExecutive.orElseThrow(() -> new UsernameNotFoundException("No delivery executive found with username: " + username));
     }
 
     private void validateRespectiveExecutive(Delivery delivery, DeliveryExecutive deliveryExecutive) {
         if (!delivery.getDeliveryExecutive().equals(deliveryExecutive)) {
-            throw new AccessDeniedException("Delivery executive: " + deliveryExecutive.getUsername() + " is not authorized to update the status of delivery: " + delivery.getId());
+            throw new UnauthorizedStatusUpdateException("Delivery executive: " + deliveryExecutive.getUsername() + " is not authorized to update the status of delivery: " + delivery.getId());
         }
     }
 

@@ -7,10 +7,7 @@ import com.swiggy.FulfillmentService.Entities.Delivery;
 import com.swiggy.FulfillmentService.Entities.DeliveryExecutive;
 import com.swiggy.FulfillmentService.Enums.Availability;
 import com.swiggy.FulfillmentService.Enums.DeliveryStatus;
-import com.swiggy.FulfillmentService.Exceptions.NoDeliveryExecutiveNearbyException;
-import com.swiggy.FulfillmentService.Exceptions.NominatimException;
-import com.swiggy.FulfillmentService.Exceptions.OrderAlreadyAssignedException;
-import com.swiggy.FulfillmentService.Exceptions.OrderAlreadyDeliveredException;
+import com.swiggy.FulfillmentService.Exceptions.*;
 import com.swiggy.FulfillmentService.Repositories.DeliveriesRepository;
 import com.swiggy.FulfillmentService.Repositories.DeliveryExecutivesRepository;
 import org.apache.logging.log4j.util.Strings;
@@ -20,10 +17,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataRetrievalFailureException;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.client.RestTemplate;
 
@@ -51,12 +44,6 @@ class DeliveriesServiceTest {
 
     @Mock
     private Delivery mockDelivery;
-
-    @Mock
-    private SecurityContext securityContext;
-
-    @Mock
-    private Authentication authentication;
 
     @Mock
     private DeliveryExecutive mockDeliveryExecutive;
@@ -186,44 +173,40 @@ class DeliveriesServiceTest {
     }
 
     @Test
-    void testUpdateStatus_deliveryNotFoundInDatabase_throwsNoSuchElementException() {
-        when(deliveriesRepository.findById(DELIVERY_ID)).thenReturn(Optional.empty());
-
-        assertThrows(NoSuchElementException.class, () -> deliveriesService.updateStatus(DELIVERY_ID));
-
-        verify(deliveriesRepository, times(1)).findById(DELIVERY_ID);
-        verify(deliveryExecutivesRepository, never()).findByUsername(anyString());
-        verify(deliveriesRepository, never()).save(any());
-        verify(deliveryExecutivesRepository, never()).save(any());
-        verify(deliveriesRepository, never()).existsByOrderId(anyLong());
-    }
-
-    @Test
-    void testUpdateStatus_deliveryNotFoundInDatabase_throwsUsernameNotFoundException() {
-        SecurityContextHolder.setContext(securityContext);
-        when(deliveriesRepository.findById(DELIVERY_ID)).thenReturn(Optional.of(delivery));
-        when(securityContext.getAuthentication()).thenReturn(authentication);
-        when(authentication.getName()).thenReturn(USERNAME);
+    void testUpdateStatus_deliveryExecutiveNotFoundInDatabase_throwsUsernameNotFoundException() {
         when(deliveryExecutivesRepository.findByUsername(USERNAME)).thenReturn(Optional.empty());
 
-        assertThrows(UsernameNotFoundException.class, () -> deliveriesService.updateStatus(DELIVERY_ID));
+        assertThrows(UsernameNotFoundException.class, () -> deliveriesService.updateStatus(DELIVERY_ID, USERNAME));
 
-        verify(deliveriesRepository, times(1)).findById(DELIVERY_ID);
         verify(deliveryExecutivesRepository, times(1)).findByUsername(USERNAME);
+        verify(deliveriesRepository, never()).findById(DELIVERY_ID);
         verify(deliveriesRepository, never()).save(any());
         verify(deliveryExecutivesRepository, never()).save(any());
         verify(deliveriesRepository, never()).existsByOrderId(anyLong());
     }
 
     @Test
-    void testUpdateStatus_deliveryExecutiveNotAuthorizedToUpdateStatusOfAnotherDelivery_throwsAccessDeniedException() {
-        SecurityContextHolder.setContext(securityContext);
+    void testUpdateStatus_deliveryNotFoundInDatabase_throwsNoSuchElementException() {
+        when(deliveryExecutivesRepository.findByUsername(USERNAME)).thenReturn(Optional.of(unavailableDeliveryExecutive));
+        when(deliveriesRepository.findById(DELIVERY_ID)).thenReturn(Optional.empty());
+
+        assertThrows(NoSuchElementException.class, () -> deliveriesService.updateStatus(DELIVERY_ID, USERNAME));
+
+        verify(deliveriesRepository, times(1)).findById(DELIVERY_ID);
+        verify(deliveryExecutivesRepository, times(1)).findByUsername(anyString());
+        verify(deliveriesRepository, never()).save(any());
+        verify(deliveryExecutivesRepository, never()).save(any());
+        verify(deliveriesRepository, never()).existsByOrderId(anyLong());
+    }
+
+
+
+    @Test
+    void testUpdateStatus_deliveryExecutiveNotAuthorizedToUpdateStatusOfAnotherDelivery_throwsUnauthorizedStatusUpdateException() {
         when(deliveriesRepository.findById(DELIVERY_ID)).thenReturn(Optional.of(delivery));
-        when(securityContext.getAuthentication()).thenReturn(authentication);
-        when(authentication.getName()).thenReturn(USERNAME);
         when(deliveryExecutivesRepository.findByUsername(USERNAME)).thenReturn(Optional.of(mockDeliveryExecutive));
 
-        assertThrows(AccessDeniedException.class, () -> deliveriesService.updateStatus(DELIVERY_ID));
+        assertThrows(UnauthorizedStatusUpdateException.class, () -> deliveriesService.updateStatus(DELIVERY_ID, USERNAME));
 
         verify(deliveriesRepository, times(1)).findById(DELIVERY_ID);
         verify(deliveryExecutivesRepository, times(1)).findByUsername(USERNAME);
@@ -234,13 +217,10 @@ class DeliveriesServiceTest {
 
     @Test
     void testUpdateStatus_forDeliveryAlreadyDelivered_throwsOrderAlreadyDeliveredException() {
-        SecurityContextHolder.setContext(securityContext);
         when(deliveriesRepository.findById(DELIVERY_ID)).thenReturn(Optional.of(delivery));
-        when(securityContext.getAuthentication()).thenReturn(authentication);
-        when(authentication.getName()).thenReturn(USERNAME);
         when(deliveryExecutivesRepository.findByUsername(USERNAME)).thenReturn(Optional.of(unavailableDeliveryExecutive));
 
-        assertThrows(OrderAlreadyDeliveredException.class, () -> deliveriesService.updateStatus(DELIVERY_ID));
+        assertThrows(OrderAlreadyDeliveredException.class, () -> deliveriesService.updateStatus(DELIVERY_ID, USERNAME));
 
         verify(deliveriesRepository, times(1)).findById(DELIVERY_ID);
         verify(deliveryExecutivesRepository, times(1)).findByUsername(USERNAME);
@@ -251,13 +231,12 @@ class DeliveriesServiceTest {
 
     @Test
     void testUpdateStatus_unexpectedDatabaseError_throwsRuntimeException() {
-        SecurityContextHolder.setContext(securityContext);
-        when(deliveriesRepository.findById(DELIVERY_ID)).thenThrow(DataRetrievalFailureException.class);
+        when(deliveryExecutivesRepository.findByUsername(USERNAME)).thenThrow(DataRetrievalFailureException.class);
 
-        assertThrows(RuntimeException.class, () -> deliveriesService.updateStatus(DELIVERY_ID));
+        assertThrows(RuntimeException.class, () -> deliveriesService.updateStatus(DELIVERY_ID, USERNAME));
 
-        verify(deliveriesRepository, times(1)).findById(DELIVERY_ID);
-        verify(deliveryExecutivesRepository, never()).findByUsername(USERNAME);
+        verify(deliveriesRepository, never()).findById(DELIVERY_ID);
+        verify(deliveryExecutivesRepository, times(1)).findByUsername(USERNAME);
         verify(deliveriesRepository, never()).save(any());
         verify(deliveryExecutivesRepository, never()).save(any());
         verify(deliveriesRepository, never()).existsByOrderId(anyLong());
@@ -265,13 +244,10 @@ class DeliveriesServiceTest {
 
     @Test
     void testUpdateStatus_shouldUpdateDeliveryStatusToPickedUp_successfullyUpdated() {
-        SecurityContextHolder.setContext(securityContext);
         when(deliveriesRepository.findById(DELIVERY_ID)).thenReturn(Optional.of(delivery));
-        when(securityContext.getAuthentication()).thenReturn(authentication);
-        when(authentication.getName()).thenReturn(USERNAME);
         when(deliveryExecutivesRepository.findByUsername(USERNAME)).thenReturn(Optional.of(unavailableDeliveryExecutive));
 
-        DeliveryUpdateResponse actualResponse = deliveriesService.updateStatus(DELIVERY_ID);
+        DeliveryUpdateResponse actualResponse = deliveriesService.updateStatus(DELIVERY_ID, USERNAME);
 
         assertEquals(expectedDeliveryUpdateResponseToPickedUp, actualResponse);
         verify(deliveriesRepository, times(1)).findById(DELIVERY_ID);
@@ -284,13 +260,10 @@ class DeliveriesServiceTest {
     @Test
     void testUpdateStatus_shouldUpdateDeliveryStatusToDeliveredAndDeliveryExecutiveStatusToAvailable_successfullyUpdated() {
         delivery.setStatus(DeliveryStatus.PICKED_UP);
-        SecurityContextHolder.setContext(securityContext);
         when(deliveriesRepository.findById(DELIVERY_ID)).thenReturn(Optional.of(delivery));
-        when(securityContext.getAuthentication()).thenReturn(authentication);
-        when(authentication.getName()).thenReturn(USERNAME);
         when(deliveryExecutivesRepository.findByUsername(USERNAME)).thenReturn(Optional.of(unavailableDeliveryExecutive));
 
-        DeliveryUpdateResponse actualResponse = deliveriesService.updateStatus(DELIVERY_ID);
+        DeliveryUpdateResponse actualResponse = deliveriesService.updateStatus(DELIVERY_ID, USERNAME);
 
         assertEquals(expectedDeliveryUpdateResponseToDelivered, actualResponse);
         verify(deliveriesRepository, times(1)).findById(DELIVERY_ID);
