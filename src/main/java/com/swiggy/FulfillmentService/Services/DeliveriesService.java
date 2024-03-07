@@ -62,6 +62,13 @@ public class DeliveriesService {
 
     private DeliveryExecutive getNearestAvailableDeliveryExecutive(Location location) throws JsonProcessingException {
         List<DeliveryExecutive> availableExecutives = findAvailableDeliveryExecutives();
+        if (availableExecutives == null) {
+            throw new NullPointerException("Received null list for availableExecutives");
+        }
+        if (availableExecutives.isEmpty()) {
+            return null;
+        }
+
         double[] restaurantLocation = getCoordinatesFromNominatim(location);
 
         double closestDistance = Double.MAX_VALUE;

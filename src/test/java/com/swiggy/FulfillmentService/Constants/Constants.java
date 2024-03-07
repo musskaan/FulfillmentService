@@ -1,6 +1,8 @@
 package com.swiggy.FulfillmentService.Constants;
 
 import com.swiggy.FulfillmentService.DTOs.*;
+import com.swiggy.FulfillmentService.Entities.DeliveryExecutive;
+import com.swiggy.FulfillmentService.Enums.Availability;
 
 public class Constants {
 
@@ -12,12 +14,13 @@ public class Constants {
     public static final String STREET = "street";
     public static final String CITY = "city";
     public static final String STATE = "state";
-    public static final String ZIP_CDE = "452001";
+    public static final String ZIP_CODE = "452001";
+    public static final String ANOTHER_ZIP_CODE = "412308";
     public static final String ENCODED_PASSWORD = "encoded_password";
     public static final String SUCCESSFULLY_REGISTERED = "Delivery executive registered successfully";
-    public static final String SUCCESSFULLY_ASSIGNED = "Delivery executive assigned successfully to the order";
+    public static final String SUCCESSFULLY_ASSIGNED = "Delivery executive assigned successfully";
     public static final Long ORDER_ID = 1L;
-    public static final Location location = new Location(STREET, CITY, STATE, ZIP_CDE);
+    public static final Location location = new Location(STREET, CITY, STATE, ZIP_CODE);
     public static final DeliveryExecutiveRegistrationRequest deliveryExecutiveRegistrationRequest = DeliveryExecutiveRegistrationRequest.builder()
             .firstName(FIRST_NAME)
             .lastName(LAST_NAME)
@@ -46,5 +49,15 @@ public class Constants {
             .customerLocation(location)
             .deliveryExecutive(deliveryExecutiveDTO)
             .message(SUCCESSFULLY_ASSIGNED)
+            .build();
+
+    public static final DeliveryExecutive availableDeliveryExecutive = DeliveryExecutive.builder()
+            .firstName(FIRST_NAME)
+            .lastName(LAST_NAME)
+            .username(USERNAME)
+            .password(PASSWORD)
+            .location(location)
+            .phone(PHONE)
+            .availability(Availability.AVAILABLE)
             .build();
 }
