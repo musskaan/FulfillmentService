@@ -1,8 +1,10 @@
 package com.swiggy.FulfillmentService.Constants;
 
 import com.swiggy.FulfillmentService.DTOs.*;
+import com.swiggy.FulfillmentService.Entities.Delivery;
 import com.swiggy.FulfillmentService.Entities.DeliveryExecutive;
 import com.swiggy.FulfillmentService.Enums.Availability;
+import com.swiggy.FulfillmentService.Enums.DeliveryStatus;
 
 public class Constants {
 
@@ -19,6 +21,7 @@ public class Constants {
     public static final String ENCODED_PASSWORD = "encoded_password";
     public static final String SUCCESSFULLY_REGISTERED = "Delivery executive registered successfully";
     public static final String SUCCESSFULLY_ASSIGNED = "Delivery executive assigned successfully";
+    public static final String DELIVERY_ID = "54321";
     public static final Long ORDER_ID = 1L;
     public static final Location location = new Location(STREET, CITY, STATE, ZIP_CODE);
     public static final DeliveryExecutiveRegistrationRequest deliveryExecutiveRegistrationRequest = DeliveryExecutiveRegistrationRequest.builder()
@@ -59,5 +62,36 @@ public class Constants {
             .location(location)
             .phone(PHONE)
             .availability(Availability.AVAILABLE)
+            .build();
+
+    public static final DeliveryExecutive unavailableDeliveryExecutive = DeliveryExecutive.builder()
+            .firstName(FIRST_NAME)
+            .lastName(LAST_NAME)
+            .username(USERNAME)
+            .password(PASSWORD)
+            .location(location)
+            .phone(PHONE)
+            .availability(Availability.UNAVAILABLE)
+            .build();
+
+    public static final Delivery delivery = Delivery.builder()
+            .id(DELIVERY_ID)
+            .orderId(ORDER_ID)
+            .customerLocation(location)
+            .restaurantLocation(location)
+            .deliveryExecutive(unavailableDeliveryExecutive)
+            .status(DeliveryStatus.ASSIGNED)
+            .build();
+
+    public static final DeliveryUpdateResponse expectedDeliveryUpdateResponseToPickedUp = DeliveryUpdateResponse.builder()
+            .orderId(ORDER_ID)
+            .deliveryExecutiveId(availableDeliveryExecutive.getId())
+            .status(DeliveryStatus.PICKED_UP)
+            .build();
+
+    public static final DeliveryUpdateResponse expectedDeliveryUpdateResponseToDelivered = DeliveryUpdateResponse.builder()
+            .orderId(ORDER_ID)
+            .deliveryExecutiveId(availableDeliveryExecutive.getId())
+            .status(DeliveryStatus.DELIVERED)
             .build();
 }

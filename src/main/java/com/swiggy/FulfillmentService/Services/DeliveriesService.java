@@ -6,20 +6,28 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.swiggy.FulfillmentService.Builders.Builder;
 import com.swiggy.FulfillmentService.DTOs.DeliveryRequest;
 import com.swiggy.FulfillmentService.DTOs.DeliveryResponse;
+import com.swiggy.FulfillmentService.DTOs.DeliveryUpdateResponse;
 import com.swiggy.FulfillmentService.DTOs.Location;
 import com.swiggy.FulfillmentService.Entities.Delivery;
 import com.swiggy.FulfillmentService.Entities.DeliveryExecutive;
 import com.swiggy.FulfillmentService.Enums.Availability;
+import com.swiggy.FulfillmentService.Enums.DeliveryStatus;
 import com.swiggy.FulfillmentService.Exceptions.NoDeliveryExecutiveNearbyException;
 import com.swiggy.FulfillmentService.Exceptions.NominatimException;
 import com.swiggy.FulfillmentService.Exceptions.OrderAlreadyAssignedException;
+import com.swiggy.FulfillmentService.Exceptions.OrderAlreadyDeliveredException;
 import com.swiggy.FulfillmentService.Repositories.DeliveriesRepository;
 import com.swiggy.FulfillmentService.Repositories.DeliveryExecutivesRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Optional;
 
 import static com.swiggy.FulfillmentService.Constants.Constants.*;
 
@@ -136,5 +144,62 @@ public class DeliveriesService {
 
         final double EARTH_RADIUS = 6371.0; // Earth radius in kilometers
         return EARTH_RADIUS * c;
+    }
+
+    public DeliveryUpdateResponse updateStatus(String deliveryId) {
+        try {
+            Delivery delivery = getDeliveryById(deliveryId);
+            DeliveryExecutive deliveryExecutive = getCurrentDeliveryExecutive();
+
+            validateRespectiveExecutive(delivery, deliveryExecutive);
+            validateNotAlreadyDelivered(delivery.getStatus());
+
+            updateDeliveryAndExecutiveStatus(delivery, deliveryExecutive);
+
+            return Builder.buildDeliveryUpdateResponse(delivery);
+        } catch (NoSuchElementException | UsernameNotFoundException | AccessDeniedException | OrderAlreadyDeliveredException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RuntimeException("Error updating status for delivery: " + deliveryId, e);
+        }
+    }
+
+    private Delivery getDeliveryById(String deliveryId) {
+        Optional<Delivery> optionalDelivery = deliveriesRepository.findById(deliveryId);
+        return optionalDelivery.orElseThrow(() -> new NoSuchElementException("No delivery found with id: " + deliveryId));
+    }
+
+    private DeliveryExecutive getCurrentDeliveryExecutive() {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        Optional<DeliveryExecutive> optionalDeliveryExecutive = deliveryExecutivesRepository.findByUsername(username);
+        return optionalDeliveryExecutive.orElseThrow(() -> new UsernameNotFoundException("No delivery executive found with username: " + username));
+    }
+
+    private void validateRespectiveExecutive(Delivery delivery, DeliveryExecutive deliveryExecutive) {
+        if (!delivery.getDeliveryExecutive().equals(deliveryExecutive)) {
+            throw new AccessDeniedException("Delivery executive: " + deliveryExecutive.getUsername() + " is not authorized to update the status of delivery: " + delivery.getId());
+        }
+    }
+
+    private void validateNotAlreadyDelivered(DeliveryStatus status) {
+        if (status.equals(DeliveryStatus.DELIVERED)) {
+            throw new OrderAlreadyDeliveredException("Cannot update status, order has already been delivered");
+        }
+    }
+
+    private void updateDeliveryAndExecutiveStatus(Delivery delivery, DeliveryExecutive deliveryExecutive) {
+        DeliveryStatus currentStatus = delivery.getStatus();
+
+        if (currentStatus.equals(DeliveryStatus.PICKED_UP)) {
+            delivery.setStatus(DeliveryStatus.DELIVERED);
+            deliveryExecutive.setLocation(delivery.getCustomerLocation());
+            deliveryExecutive.setAvailability(Availability.AVAILABLE);
+        } else {
+            delivery.setStatus(DeliveryStatus.PICKED_UP);
+            deliveryExecutive.setLocation(delivery.getRestaurantLocation());
+        }
+
+        deliveriesRepository.save(delivery);
+        deliveryExecutivesRepository.save(deliveryExecutive);
     }
 }

@@ -1,13 +1,16 @@
 package com.swiggy.FulfillmentService.Services;
 
 import com.swiggy.FulfillmentService.DTOs.DeliveryResponse;
+import com.swiggy.FulfillmentService.DTOs.DeliveryUpdateResponse;
 import com.swiggy.FulfillmentService.DTOs.Location;
 import com.swiggy.FulfillmentService.Entities.Delivery;
 import com.swiggy.FulfillmentService.Entities.DeliveryExecutive;
 import com.swiggy.FulfillmentService.Enums.Availability;
+import com.swiggy.FulfillmentService.Enums.DeliveryStatus;
 import com.swiggy.FulfillmentService.Exceptions.NoDeliveryExecutiveNearbyException;
 import com.swiggy.FulfillmentService.Exceptions.NominatimException;
 import com.swiggy.FulfillmentService.Exceptions.OrderAlreadyAssignedException;
+import com.swiggy.FulfillmentService.Exceptions.OrderAlreadyDeliveredException;
 import com.swiggy.FulfillmentService.Repositories.DeliveriesRepository;
 import com.swiggy.FulfillmentService.Repositories.DeliveryExecutivesRepository;
 import org.apache.logging.log4j.util.Strings;
@@ -16,10 +19,18 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataRetrievalFailureException;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Optional;
 
 import static com.swiggy.FulfillmentService.Constants.Constants.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -39,7 +50,16 @@ class DeliveriesServiceTest {
     private RestTemplate restTemplate;
 
     @Mock
-    private Delivery delivery;
+    private Delivery mockDelivery;
+
+    @Mock
+    private SecurityContext securityContext;
+
+    @Mock
+    private Authentication authentication;
+
+    @Mock
+    private DeliveryExecutive mockDeliveryExecutive;
 
     @InjectMocks
     private DeliveriesService deliveriesService;
@@ -56,6 +76,7 @@ class DeliveriesServiceTest {
         verify(deliveryExecutivesRepository, never()).findByAvailability(any(Availability.class));
         verify(deliveriesRepository, never()).save(any(Delivery.class));
         verify(deliveryExecutivesRepository, never()).save(any(DeliveryExecutive.class));
+        verify(deliveriesRepository, never()).findById(DELIVERY_ID);
     }
 
     @Test
@@ -69,6 +90,7 @@ class DeliveriesServiceTest {
         verify(deliveryExecutivesRepository, times(1)).findByAvailability(any(Availability.class));
         verify(deliveriesRepository, never()).save(any(Delivery.class));
         verify(deliveryExecutivesRepository, never()).save(any(DeliveryExecutive.class));
+        verify(deliveriesRepository, never()).findById(DELIVERY_ID);
     }
 
     @Test
@@ -82,6 +104,7 @@ class DeliveriesServiceTest {
         verify(deliveryExecutivesRepository, times(1)).findByAvailability(any(Availability.class));
         verify(deliveriesRepository, never()).save(any(Delivery.class));
         verify(deliveryExecutivesRepository, never()).save(any(DeliveryExecutive.class));
+        verify(deliveriesRepository, never()).findById(DELIVERY_ID);
     }
 
     @Test
@@ -96,6 +119,7 @@ class DeliveriesServiceTest {
         verify(deliveryExecutivesRepository, times(1)).findByAvailability(any(Availability.class));
         verify(deliveriesRepository, never()).save(any(Delivery.class));
         verify(deliveryExecutivesRepository, never()).save(any(DeliveryExecutive.class));
+        verify(deliveriesRepository, never()).findById(DELIVERY_ID);
     }
 
     @Test
@@ -110,6 +134,7 @@ class DeliveriesServiceTest {
         verify(deliveryExecutivesRepository, times(1)).findByAvailability(any(Availability.class));
         verify(deliveriesRepository, never()).save(any(Delivery.class));
         verify(deliveryExecutivesRepository, never()).save(any(DeliveryExecutive.class));
+        verify(deliveriesRepository, never()).findById(DELIVERY_ID);
     }
 
     @Test
@@ -117,7 +142,7 @@ class DeliveriesServiceTest {
         when(deliveriesRepository.existsByOrderId(ORDER_ID)).thenReturn(false);
         when(deliveryExecutivesRepository.findByAvailability(any(Availability.class))).thenReturn(List.of(availableDeliveryExecutive));
         when(restTemplate.getForObject(anyString(), any(Class.class))).thenReturn(jsonResponse);
-        when(deliveriesRepository.save(any(Delivery.class))).thenReturn(delivery);
+        when(deliveriesRepository.save(any(Delivery.class))).thenReturn(mockDelivery);
         when(deliveryExecutivesRepository.save(availableDeliveryExecutive)).thenReturn(availableDeliveryExecutive);
 
         DeliveryResponse actualResponse = deliveriesService.assign(deliveryRequest);
@@ -127,6 +152,7 @@ class DeliveriesServiceTest {
         verify(deliveryExecutivesRepository, times(1)).findByAvailability(any(Availability.class));
         verify(deliveriesRepository, times(1)).save(any(Delivery.class));
         verify(deliveryExecutivesRepository, times(1)).save(any(DeliveryExecutive.class));
+        verify(deliveriesRepository, never()).findById(DELIVERY_ID);
     }
 
     @Test
@@ -146,7 +172,7 @@ class DeliveriesServiceTest {
         when(deliveryExecutivesRepository.findByAvailability(any(Availability.class))).thenReturn(List.of(deliveryExecutive));
         when(restTemplate.getForObject(apiStringForRestaurant, String.class)).thenReturn(jsonResponse);
         when(restTemplate.getForObject(apiStringForDeliveryExecutive, String.class)).thenReturn(jsonResponseForDeliveryExecutive);
-        when(deliveriesRepository.save(any(Delivery.class))).thenReturn(delivery);
+        when(deliveriesRepository.save(any(Delivery.class))).thenReturn(mockDelivery);
         when(deliveryExecutivesRepository.save(deliveryExecutive)).thenReturn(deliveryExecutive);
 
         DeliveryResponse actualResponse = deliveriesService.assign(deliveryRequest);
@@ -156,5 +182,121 @@ class DeliveriesServiceTest {
         verify(deliveryExecutivesRepository, times(1)).findByAvailability(any(Availability.class));
         verify(deliveriesRepository, times(1)).save(any(Delivery.class));
         verify(deliveryExecutivesRepository, times(1)).save(any(DeliveryExecutive.class));
+        verify(deliveriesRepository, never()).findById(DELIVERY_ID);
+    }
+
+    @Test
+    void testUpdateStatus_deliveryNotFoundInDatabase_throwsNoSuchElementException() {
+        when(deliveriesRepository.findById(DELIVERY_ID)).thenReturn(Optional.empty());
+
+        assertThrows(NoSuchElementException.class, () -> deliveriesService.updateStatus(DELIVERY_ID));
+
+        verify(deliveriesRepository, times(1)).findById(DELIVERY_ID);
+        verify(deliveryExecutivesRepository, never()).findByUsername(anyString());
+        verify(deliveriesRepository, never()).save(any());
+        verify(deliveryExecutivesRepository, never()).save(any());
+        verify(deliveriesRepository, never()).existsByOrderId(anyLong());
+    }
+
+    @Test
+    void testUpdateStatus_deliveryNotFoundInDatabase_throwsUsernameNotFoundException() {
+        SecurityContextHolder.setContext(securityContext);
+        when(deliveriesRepository.findById(DELIVERY_ID)).thenReturn(Optional.of(delivery));
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.getName()).thenReturn(USERNAME);
+        when(deliveryExecutivesRepository.findByUsername(USERNAME)).thenReturn(Optional.empty());
+
+        assertThrows(UsernameNotFoundException.class, () -> deliveriesService.updateStatus(DELIVERY_ID));
+
+        verify(deliveriesRepository, times(1)).findById(DELIVERY_ID);
+        verify(deliveryExecutivesRepository, times(1)).findByUsername(USERNAME);
+        verify(deliveriesRepository, never()).save(any());
+        verify(deliveryExecutivesRepository, never()).save(any());
+        verify(deliveriesRepository, never()).existsByOrderId(anyLong());
+    }
+
+    @Test
+    void testUpdateStatus_deliveryExecutiveNotAuthorizedToUpdateStatusOfAnotherDelivery_throwsAccessDeniedException() {
+        SecurityContextHolder.setContext(securityContext);
+        when(deliveriesRepository.findById(DELIVERY_ID)).thenReturn(Optional.of(delivery));
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.getName()).thenReturn(USERNAME);
+        when(deliveryExecutivesRepository.findByUsername(USERNAME)).thenReturn(Optional.of(mockDeliveryExecutive));
+
+        assertThrows(AccessDeniedException.class, () -> deliveriesService.updateStatus(DELIVERY_ID));
+
+        verify(deliveriesRepository, times(1)).findById(DELIVERY_ID);
+        verify(deliveryExecutivesRepository, times(1)).findByUsername(USERNAME);
+        verify(deliveriesRepository, never()).save(any());
+        verify(deliveryExecutivesRepository, never()).save(any());
+        verify(deliveriesRepository, never()).existsByOrderId(anyLong());
+    }
+
+    @Test
+    void testUpdateStatus_forDeliveryAlreadyDelivered_throwsOrderAlreadyDeliveredException() {
+        SecurityContextHolder.setContext(securityContext);
+        when(deliveriesRepository.findById(DELIVERY_ID)).thenReturn(Optional.of(delivery));
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.getName()).thenReturn(USERNAME);
+        when(deliveryExecutivesRepository.findByUsername(USERNAME)).thenReturn(Optional.of(unavailableDeliveryExecutive));
+
+        assertThrows(OrderAlreadyDeliveredException.class, () -> deliveriesService.updateStatus(DELIVERY_ID));
+
+        verify(deliveriesRepository, times(1)).findById(DELIVERY_ID);
+        verify(deliveryExecutivesRepository, times(1)).findByUsername(USERNAME);
+        verify(deliveriesRepository, never()).save(any());
+        verify(deliveryExecutivesRepository, never()).save(any());
+        verify(deliveriesRepository, never()).existsByOrderId(anyLong());
+    }
+
+    @Test
+    void testUpdateStatus_unexpectedDatabaseError_throwsRuntimeException() {
+        SecurityContextHolder.setContext(securityContext);
+        when(deliveriesRepository.findById(DELIVERY_ID)).thenThrow(DataRetrievalFailureException.class);
+
+        assertThrows(RuntimeException.class, () -> deliveriesService.updateStatus(DELIVERY_ID));
+
+        verify(deliveriesRepository, times(1)).findById(DELIVERY_ID);
+        verify(deliveryExecutivesRepository, never()).findByUsername(USERNAME);
+        verify(deliveriesRepository, never()).save(any());
+        verify(deliveryExecutivesRepository, never()).save(any());
+        verify(deliveriesRepository, never()).existsByOrderId(anyLong());
+    }
+
+    @Test
+    void testUpdateStatus_shouldUpdateDeliveryStatusToPickedUp_successfullyUpdated() {
+        SecurityContextHolder.setContext(securityContext);
+        when(deliveriesRepository.findById(DELIVERY_ID)).thenReturn(Optional.of(delivery));
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.getName()).thenReturn(USERNAME);
+        when(deliveryExecutivesRepository.findByUsername(USERNAME)).thenReturn(Optional.of(unavailableDeliveryExecutive));
+
+        DeliveryUpdateResponse actualResponse = deliveriesService.updateStatus(DELIVERY_ID);
+
+        assertEquals(expectedDeliveryUpdateResponseToPickedUp, actualResponse);
+        verify(deliveriesRepository, times(1)).findById(DELIVERY_ID);
+        verify(deliveryExecutivesRepository, times(1)).findByUsername(USERNAME);
+        verify(deliveriesRepository, times(1)).save(any());
+        verify(deliveryExecutivesRepository, times(1)).save(any());
+        verify(deliveriesRepository, never()).existsByOrderId(anyLong());
+    }
+
+    @Test
+    void testUpdateStatus_shouldUpdateDeliveryStatusToDeliveredAndDeliveryExecutiveStatusToAvailable_successfullyUpdated() {
+        delivery.setStatus(DeliveryStatus.PICKED_UP);
+        SecurityContextHolder.setContext(securityContext);
+        when(deliveriesRepository.findById(DELIVERY_ID)).thenReturn(Optional.of(delivery));
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.getName()).thenReturn(USERNAME);
+        when(deliveryExecutivesRepository.findByUsername(USERNAME)).thenReturn(Optional.of(unavailableDeliveryExecutive));
+
+        DeliveryUpdateResponse actualResponse = deliveriesService.updateStatus(DELIVERY_ID);
+
+        assertEquals(expectedDeliveryUpdateResponseToDelivered, actualResponse);
+        verify(deliveriesRepository, times(1)).findById(DELIVERY_ID);
+        verify(deliveryExecutivesRepository, times(1)).findByUsername(USERNAME);
+        verify(deliveriesRepository, times(1)).save(any());
+        verify(deliveryExecutivesRepository, times(1)).save(any());
+        verify(deliveriesRepository, never()).existsByOrderId(anyLong());
     }
 }

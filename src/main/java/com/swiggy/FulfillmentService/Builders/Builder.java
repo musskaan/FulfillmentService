@@ -53,4 +53,12 @@ public class Builder {
                 .deliveryExecutive(closestAvailableDeliveryExecutive)
                 .build();
     }
+
+    public static DeliveryUpdateResponse buildDeliveryUpdateResponse(Delivery delivery) {
+        return DeliveryUpdateResponse.builder()
+                .orderId(delivery.getOrderId())
+                .deliveryExecutiveId(delivery.getDeliveryExecutive().getId())
+                .status(delivery.getStatus())
+                .build();
+    }
 }
