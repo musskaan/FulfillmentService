@@ -14,6 +14,6 @@ public class DeliveryExecutiveRegistrationResponse {
     private String lastName;
     private String username;
     private String phone;
-    private Location location;
+    private Address address;
     private String message;
 }

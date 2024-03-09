@@ -12,25 +12,30 @@ public class Constants {
     public static final String LAST_NAME = "LastName";
     public static final String USERNAME = "username";
     public static final String PASSWORD = "Password123";
+    public static final String INVALID_PASSWORD = "invalid";
     public static final String PHONE = "1234567890";
+    public static final String INVALID_PHONE_HAVING_LETTERS = "abc";
+    public static final String INVALID_PHONE_HAVING_LESS_DIGITS = "1234";
+    public static final String INVALID_PHONE_HAVING_MORE_DIGITS = "1234";
     public static final String STREET = "street";
     public static final String CITY = "city";
     public static final String STATE = "state";
     public static final String ZIP_CODE = "452001";
+    public static final String INVALID_ZIP_CODE = "invalid";
     public static final String ANOTHER_ZIP_CODE = "412308";
     public static final String ENCODED_PASSWORD = "encoded_password";
     public static final String SUCCESSFULLY_REGISTERED = "Delivery executive registered successfully";
     public static final String SUCCESSFULLY_ASSIGNED = "Delivery executive assigned successfully";
     public static final String DELIVERY_ID = "54321";
     public static final Long ORDER_ID = 1L;
-    public static final Location location = new Location(STREET, CITY, STATE, ZIP_CODE);
+    public static final Address address = new Address(STREET, CITY, STATE, ZIP_CODE);
     public static final DeliveryExecutiveRegistrationRequest deliveryExecutiveRegistrationRequest = DeliveryExecutiveRegistrationRequest.builder()
             .firstName(FIRST_NAME)
             .lastName(LAST_NAME)
             .username(USERNAME)
             .password(PASSWORD)
             .phone(PHONE)
-            .location(location)
+            .address(address)
             .build();
 
     public static final DeliveryExecutiveRegistrationResponse deliveryExecutiveRegistrationResponse = DeliveryExecutiveRegistrationResponse.builder()
@@ -38,18 +43,18 @@ public class Constants {
             .lastName(LAST_NAME)
             .username(USERNAME)
             .phone(PHONE)
-            .location(location)
+            .address(address)
             .message(SUCCESSFULLY_REGISTERED)
             .build();
 
     public static final DeliveryExecutiveDTO deliveryExecutiveDTO = new DeliveryExecutiveDTO(FIRST_NAME, LAST_NAME, PHONE);
 
-    public static final DeliveryRequest deliveryRequest = new DeliveryRequest(ORDER_ID, location, location);
+    public static final DeliveryRequest deliveryRequest = new DeliveryRequest(ORDER_ID, address, address);
 
     public static final DeliveryResponse deliveryResponse = DeliveryResponse.builder()
             .orderId(ORDER_ID)
-            .restaurantLocation(location)
-            .customerLocation(location)
+            .restaurantAddress(address)
+            .customerAddress(address)
             .deliveryExecutive(deliveryExecutiveDTO)
             .message(SUCCESSFULLY_ASSIGNED)
             .build();
@@ -59,7 +64,7 @@ public class Constants {
             .lastName(LAST_NAME)
             .username(USERNAME)
             .password(PASSWORD)
-            .location(location)
+            .address(address)
             .phone(PHONE)
             .availability(Availability.AVAILABLE)
             .build();
@@ -69,7 +74,7 @@ public class Constants {
             .lastName(LAST_NAME)
             .username(USERNAME)
             .password(PASSWORD)
-            .location(location)
+            .address(address)
             .phone(PHONE)
             .availability(Availability.UNAVAILABLE)
             .build();
@@ -77,8 +82,8 @@ public class Constants {
     public static final Delivery delivery = Delivery.builder()
             .id(DELIVERY_ID)
             .orderId(ORDER_ID)
-            .customerLocation(location)
-            .restaurantLocation(location)
+            .customerAddress(address)
+            .restaurantAddress(address)
             .deliveryExecutive(unavailableDeliveryExecutive)
             .status(DeliveryStatus.ASSIGNED)
             .build();

@@ -60,7 +60,7 @@ class DeliveryExecutivesServiceTest {
                 .lastName(LAST_NAME)
                 .username(USERNAME)
                 .phone(PHONE)
-                .location(location)
+                .address(address)
                 .message(SUCCESSFULLY_REGISTERED)
                 .build();
         when(deliveryExecutivesRepository.existsByUsername(deliveryExecutiveRegistrationRequest.getUsername())).thenReturn(false);

@@ -15,5 +15,5 @@ public class DeliveryExecutiveRegistrationRequest {
     private String username;
     private String password;
     private String phone;
-    private Location location;
+    private Address address;
 }

@@ -9,6 +9,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class DeliveryRequest {
     private Long orderId;
-    private Location pickupLocation;
-    private Location dropLocation;
+    private Address pickupAddress;
+    private Address dropAddress;
 }

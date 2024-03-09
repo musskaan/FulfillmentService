@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import jakarta.validation.Valid;
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/deliveryExecutives")
@@ -20,7 +22,7 @@ public class DeliveryExecutivesController {
     private final DeliveryExecutivesService deliveryExecutivesService;
 
     @PostMapping
-    public ResponseEntity<?> register(@RequestBody DeliveryExecutiveRegistrationRequest deliveryExecutiveRegistrationRequest) {
+    public ResponseEntity<?> register(@RequestBody @Valid DeliveryExecutiveRegistrationRequest deliveryExecutiveRegistrationRequest) {
         try {
             DeliveryExecutiveRegistrationResponse deliveryExecutiveRegistrationResponse = deliveryExecutivesService.register(deliveryExecutiveRegistrationRequest);
             return ResponseEntity.status(HttpStatus.CREATED).body(deliveryExecutiveRegistrationResponse);

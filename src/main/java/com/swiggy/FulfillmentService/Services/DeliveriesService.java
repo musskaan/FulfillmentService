@@ -4,10 +4,10 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.swiggy.FulfillmentService.Builders.Builder;
+import com.swiggy.FulfillmentService.DTOs.Address;
 import com.swiggy.FulfillmentService.DTOs.DeliveryRequest;
 import com.swiggy.FulfillmentService.DTOs.DeliveryResponse;
 import com.swiggy.FulfillmentService.DTOs.DeliveryUpdateResponse;
-import com.swiggy.FulfillmentService.DTOs.Location;
 import com.swiggy.FulfillmentService.Entities.Delivery;
 import com.swiggy.FulfillmentService.Entities.DeliveryExecutive;
 import com.swiggy.FulfillmentService.Enums.Availability;
@@ -44,8 +44,7 @@ public class DeliveriesService {
                 throw new OrderAlreadyAssignedException("This order has already been assigned to another delivery executive");
             }
 
-            DeliveryExecutive closestAvailableDeliveryExecutive = getNearestAvailableDeliveryExecutive(deliveryRequest.getPickupLocation());
-
+            DeliveryExecutive closestAvailableDeliveryExecutive = getNearestAvailableDeliveryExecutive(deliveryRequest.getPickupAddress());
             if (closestAvailableDeliveryExecutive == null) {
                 throw new NoDeliveryExecutiveNearbyException("No delivery executive is available at the moment");
             }
@@ -64,7 +63,7 @@ public class DeliveriesService {
         }
     }
 
-    private DeliveryExecutive getNearestAvailableDeliveryExecutive(Location location) throws JsonProcessingException {
+    private DeliveryExecutive getNearestAvailableDeliveryExecutive(Address address) throws JsonProcessingException {
         List<DeliveryExecutive> availableExecutives = findAvailableDeliveryExecutives();
         if (availableExecutives == null) {
             throw new NullPointerException("Received null list for availableExecutives");
@@ -73,13 +72,14 @@ public class DeliveriesService {
             return null;
         }
 
-        double[] restaurantLocation = getCoordinatesFromNominatim(location);
+        double[] restaurantLocation = getCoordinatesFromNominatim(address);
 
         double closestDistance = Double.MAX_VALUE;
         DeliveryExecutive closestAvailableDeliveryExecutive = null;
 
         for (DeliveryExecutive availableDeliveryExecutive : availableExecutives) {
-            double[] deliveryExecutiveLocation = getCoordinatesFromNominatim(availableDeliveryExecutive.getLocation());
+            System.out.println("availableDeliveryExecutive" + availableDeliveryExecutive);
+            double[] deliveryExecutiveLocation = getCoordinatesFromNominatim(availableDeliveryExecutive.getAddress());
             double distance = calculateDistance(restaurantLocation[0], restaurantLocation[1], deliveryExecutiveLocation[0], deliveryExecutiveLocation[1]);
 
             if (distance == 0) {
@@ -100,18 +100,17 @@ public class DeliveriesService {
         return deliveryExecutivesRepository.findByAvailability(Availability.AVAILABLE);
     }
 
-    private double[] getCoordinatesFromNominatim(Location location) throws JsonProcessingException {
-        String addressResponse = getNominatimResponse(location);
+    private double[] getCoordinatesFromNominatim(Address address) throws JsonProcessingException {
+        String addressResponse = getNominatimResponse(address);
         JsonNode restaurantAddressJson = objectMapper.readTree(addressResponse);
         double latitude = restaurantAddressJson.get(LATITUDE).asDouble();
         double longitude = restaurantAddressJson.get(LONGITUDE).asDouble();
         return new double[] {latitude, longitude};
     }
 
-    private String getNominatimResponse(Location location) {
-        String url = String.format(NOMINATIM_URL_FORMAT, location.getZipcode());
+    private String getNominatimResponse(Address address) {
+        String url = String.format(NOMINATIM_URL_FORMAT, address.getZipcode());
         String response = restTemplate.getForObject(url, String.class);
-
         if (response == null || response.isEmpty()) {
             throw new NominatimException("No response received from Nominatim API");
         }
@@ -187,11 +186,11 @@ public class DeliveriesService {
 
         if (currentStatus.equals(DeliveryStatus.PICKED_UP)) {
             delivery.setStatus(DeliveryStatus.DELIVERED);
-            deliveryExecutive.setLocation(delivery.getCustomerLocation());
+            deliveryExecutive.setAddress(delivery.getCustomerAddress());
             deliveryExecutive.setAvailability(Availability.AVAILABLE);
         } else {
             delivery.setStatus(DeliveryStatus.PICKED_UP);
-            deliveryExecutive.setLocation(delivery.getRestaurantLocation());
+            deliveryExecutive.setAddress(delivery.getRestaurantAddress());
         }
 
         deliveriesRepository.save(delivery);

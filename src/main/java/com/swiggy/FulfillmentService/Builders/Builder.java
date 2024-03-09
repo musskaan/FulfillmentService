@@ -16,7 +16,7 @@ public class Builder {
                 .lastName(registrationRequest.getLastName())
                 .username(registrationRequest.getUsername())
                 .phone(registrationRequest.getPhone())
-                .location(registrationRequest.getLocation())
+                .address(registrationRequest.getAddress())
                 .message(SUCCESSFULLY_REGISTERED)
                 .build();
     }
@@ -28,15 +28,15 @@ public class Builder {
                 .username(registrationRequest.getUsername())
                 .password(passwordEncoder.encode(registrationRequest.getPassword()))
                 .phone(registrationRequest.getPhone())
-                .location(registrationRequest.getLocation())
+                .address(registrationRequest.getAddress())
                 .build();
     }
 
     public static DeliveryResponse buildDeliveryResponse(DeliveryExecutive deliveryExecutive, DeliveryRequest deliveryRequest) {
         return DeliveryResponse.builder()
                 .orderId(deliveryRequest.getOrderId())
-                .restaurantLocation(deliveryRequest.getPickupLocation())
-                .customerLocation(deliveryRequest.getDropLocation())
+                .restaurantAddress(deliveryRequest.getPickupAddress())
+                .customerAddress(deliveryRequest.getDropAddress())
                 .deliveryExecutive(
                         new DeliveryExecutiveDTO(deliveryExecutive.getFirstName(),
                         deliveryExecutive.getLastName(),
@@ -48,14 +48,15 @@ public class Builder {
     public static Delivery buildDelivery(DeliveryExecutive closestAvailableDeliveryExecutive, DeliveryRequest deliveryRequest) {
         return Delivery.builder()
                 .orderId(deliveryRequest.getOrderId())
-                .restaurantLocation(deliveryRequest.getPickupLocation())
-                .customerLocation(deliveryRequest.getDropLocation())
+                .restaurantAddress(deliveryRequest.getPickupAddress())
+                .customerAddress(deliveryRequest.getDropAddress())
                 .deliveryExecutive(closestAvailableDeliveryExecutive)
                 .build();
     }
 
     public static DeliveryUpdateResponse buildDeliveryUpdateResponse(Delivery delivery) {
         return DeliveryUpdateResponse.builder()
+                .id(delivery.getId())
                 .orderId(delivery.getOrderId())
                 .deliveryExecutiveId(delivery.getDeliveryExecutive().getId())
                 .status(delivery.getStatus())

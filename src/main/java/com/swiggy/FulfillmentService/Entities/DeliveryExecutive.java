@@ -1,8 +1,12 @@
 package com.swiggy.FulfillmentService.Entities;
 
-import com.swiggy.FulfillmentService.DTOs.Location;
+import com.swiggy.FulfillmentService.DTOs.Address;
 import com.swiggy.FulfillmentService.Enums.Availability;
 import jakarta.persistence.*;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -10,9 +14,6 @@ import lombok.NoArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import javax.validation.constraints.NotEmpty;
-import javax.validation.constraints.Pattern;
-import javax.validation.constraints.Size;
 import java.util.Collection;
 
 @Entity
@@ -56,7 +57,8 @@ public class DeliveryExecutive implements UserDetails {
     private String phone;
 
     @Column(nullable = false)
-    private Location location;
+    @Valid
+    private Address address;
 
     @Builder.Default
     @Enumerated(EnumType.STRING)

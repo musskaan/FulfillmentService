@@ -71,7 +71,7 @@ class DeliveryExecutivesControllerTest {
                 .andExpect(jsonPath("$.lastName").value(deliveryExecutiveRegistrationResponse.getLastName()))
                 .andExpect(jsonPath("$.username").value(deliveryExecutiveRegistrationResponse.getUsername()))
                 .andExpect(jsonPath("$.phone").value(deliveryExecutiveRegistrationResponse.getPhone()))
-                .andExpect(jsonPath("$.location").value(deliveryExecutiveRegistrationResponse.getLocation()))
+                .andExpect(jsonPath("$.location").value(deliveryExecutiveRegistrationResponse.getAddress()))
                 .andExpect(jsonPath("$.message").value(SUCCESSFULLY_REGISTERED));
 
         verify(deliveryExecutivesService, times(1)).register(deliveryExecutiveRegistrationRequest);

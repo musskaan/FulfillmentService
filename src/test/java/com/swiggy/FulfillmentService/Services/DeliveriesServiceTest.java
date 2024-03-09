@@ -2,7 +2,7 @@ package com.swiggy.FulfillmentService.Services;
 
 import com.swiggy.FulfillmentService.DTOs.DeliveryResponse;
 import com.swiggy.FulfillmentService.DTOs.DeliveryUpdateResponse;
-import com.swiggy.FulfillmentService.DTOs.Location;
+import com.swiggy.FulfillmentService.DTOs.Address;
 import com.swiggy.FulfillmentService.Entities.Delivery;
 import com.swiggy.FulfillmentService.Entities.DeliveryExecutive;
 import com.swiggy.FulfillmentService.Enums.Availability;
@@ -153,7 +153,7 @@ class DeliveriesServiceTest {
                 .username(USERNAME)
                 .password(PASSWORD)
                 .phone(PHONE)
-                .location(new Location(STREET, CITY, STATE, ANOTHER_ZIP_CODE))
+                .address(new Address(STREET, CITY, STATE, ANOTHER_ZIP_CODE))
                 .availability(Availability.AVAILABLE).build();
         when(deliveriesRepository.existsByOrderId(ORDER_ID)).thenReturn(false);
         when(deliveryExecutivesRepository.findByAvailability(any(Availability.class))).thenReturn(List.of(deliveryExecutive));

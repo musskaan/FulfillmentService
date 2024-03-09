@@ -14,7 +14,6 @@ import org.springframework.context.annotation.Import;
 import org.springframework.dao.DataRetrievalFailureException;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.test.context.support.WithAnonymousUser;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -113,8 +112,7 @@ class DeliveriesControllerTest {
     }
 
     @Test
-    @WithAnonymousUser
-    void testUpdateStatusByUnauthenticatedDeliveryExecutive_returnsIsUnauthorized() throws Exception {
+    void testUpdateStatusWhenNoAuthenticationProvided_returnsIsUnauthorized() throws Exception {
         mockMvc.perform(put("/api/v1/deliveries/{deliveryId}", DELIVERY_ID)).andExpect(status().isUnauthorized());
 
         verify(deliveriesService, never()).updateStatus(DELIVERY_ID, USERNAME);

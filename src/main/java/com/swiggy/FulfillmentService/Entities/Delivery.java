@@ -1,6 +1,6 @@
 package com.swiggy.FulfillmentService.Entities;
 
-import com.swiggy.FulfillmentService.DTOs.Location;
+import com.swiggy.FulfillmentService.DTOs.Address;
 import com.swiggy.FulfillmentService.Enums.DeliveryStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -30,7 +30,7 @@ public class Delivery {
             @AttributeOverride(name = "zipcode", column = @Column(name = "restaurant_zipcode")),
     })
     @Column(nullable = false)
-    private Location restaurantLocation;
+    private Address restaurantAddress;
 
     @AttributeOverrides({
             @AttributeOverride(name = "street", column = @Column(name = "customer_street")),
@@ -39,7 +39,7 @@ public class Delivery {
             @AttributeOverride(name = "zipcode", column = @Column(name = "customer_zipcode")),
     })
     @Column(nullable = false)
-    private Location customerLocation;
+    private Address customerAddress;
 
     @ManyToOne
     @JoinColumn(name = "deliveryExecutive_id")
